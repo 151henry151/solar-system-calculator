@@ -20,55 +20,140 @@
             border-radius: 12px; 
             box-shadow: 0 2px 12px rgba(0,0,0,0.07); 
         }
-        h1 { 
+        h1, h2 { 
             text-align: center; 
-            margin-bottom: 1.5em; 
-            font-size: 2.2em; 
-            letter-spacing: 0.04em; 
+            font-weight: 300;
+            letter-spacing: 1px;
+            color: #333;
         }
-        .calculator {
+        h1 {
+            font-size: 2em;
+            margin-bottom: 1em;
+        }
+        h2 {
+            margin-top: 2em;
+            font-size: 1.5em;
+        }
+
+        /* Shared Image Style */
+        .planet-image {
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        /* Scaled Planets in Results */
+        .scaled-planets {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1em;
             margin: 2em 0;
+        }
+        .scaled-planet {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            text-align: left;
+            background: #fafafa;
             padding: 1em;
-            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .scaled-planet:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .scaled-planet .planet-image {
+            height: auto;
+            flex-shrink: 0;
+        }
+        .scaled-planet h3 {
+            margin-top: 0;
+            margin-bottom: 0.25em;
+            font-size: 1.1em;
+        }
+        .scaled-planet .planet-info {
+            margin-top: 0.5em;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Scaled planet sizes */
+        .scaled-planet[data-planet="sun"] .planet-image     { width: 300px; }
+        .scaled-planet[data-planet="jupiter"] .planet-image { width: 97px;  }
+        .scaled-planet[data-planet="saturn"] .planet-image  { width: 133px; }
+        .scaled-planet[data-planet="uranus"] .planet-image  { width: 58px;  }
+        .scaled-planet[data-planet="neptune"] .planet-image { width: 57px;  }
+        .scaled-planet[data-planet="earth"] .planet-image   { width: 29px;  }
+        .scaled-planet[data-planet="venus"] .planet-image   { width: 28px;  }
+        .scaled-planet[data-planet="mars"] .planet-image    { width: 21px;  }
+        .scaled-planet[data-planet="mercury"] .planet-image { width: 18px;  }
+        .scaled-planet[data-planet="pluto"] .planet-image   { width: 13px;  }
+
+        /* Calculators */
+        .calculator {
+            margin-top: 3em;
+            padding: 1.5em;
+            border: 1px solid #eee;
             border-radius: 8px;
         }
         .input-group {
-            margin: 1em 0;
+            margin-bottom: 1em;
         }
         label {
             display: block;
             margin-bottom: 0.5em;
-            font-weight: bold;
         }
-        input[type="number"] {
-            width: 100%;
-            padding: 0.5em;
+        input[type="number"], select {
+            padding: 0.8em;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             font-family: inherit;
             font-size: 1em;
-            border: 1px solid #ddd;
-            border-radius: 4px;
         }
         button {
-            background: #4a90e2;
-            color: white;
-            border: none;
             padding: 0.8em 1.5em;
-            font-size: 1em;
-            border-radius: 4px;
+            border: none;
+            background: #333;
+            color: white;
+            border-radius: 6px;
             cursor: pointer;
             font-family: inherit;
-            margin: 1em 0;
+            font-size: 1em;
+            transition: background 0.2s;
         }
         button:hover {
-            background: #357abd;
+            background: #555;
         }
+
+        /* Results */
         .result {
             margin-top: 1em;
-            padding: 1em;
-            background: #f5f5f5;
-            border-radius: 4px;
-            font-size: 1.1em;
+            padding: 1.5em;
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 8px;
         }
+        .planet-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
+            margin-top: 1em;
+        }
+        .planet-result {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            padding: 1em;
+            background: #fff;
+            border-radius: 8px;
+        }
+        .planet-result .planet-image {
+            width: 50px;
+            height: 50px;
+        }
+
         .back-link {
             display: block;
             text-align: center;
@@ -84,7 +169,7 @@
 <body>
     <div class="container">
         <h1>Solar System Calculator</h1>
-        
+
         <div class="calculator">
             <h2>Solar System Scale Model Calculator</h2>
             <p id="instructionText">Enter the sun's diameter in inches to calculate the scaled planet diameters:</p>
@@ -174,40 +259,47 @@
                 alert('Please enter a valid diameter for the sun');
                 return;
             }
-            const realSunDiameterMM = 1392684000000;
-            const modelSunDiameterMM = sunDiameterInches * 25.4;
-            const scaleFactor = realSunDiameterMM / modelSunDiameterMM;
-            let results = '<h3>Your Scale Model:</h3>';
-            results += `<p><strong>Scale Factor:</strong> 1:${Math.round(scaleFactor).toLocaleString()}</p>`;
-            results += '<h4>Planet Diameters:</h4>';
-            for (const [key, planet] of Object.entries(planetData)) {
-                if (key === 'sun') continue;
-                const planetDiameterMM = planet.diameter * 1e6;
-                let scaledDiameter;
-                if (unit === 'mm') {
-                    scaledDiameter = planetDiameterMM / scaleFactor;
-                } else if (unit === 'feet') {
-                    scaledDiameter = (planetDiameterMM / scaleFactor) / 304.8;
-                } else {
-                    scaledDiameter = (planetDiameterMM / scaleFactor) / 25.4;
-                }
-                results += `<p><strong>${planet.name}:</strong> ${scaledDiameter.toFixed(3)} ${unit}</p>`;
-            }
-            results += '<h4>Distances from Sun:</h4>';
-            for (const [key, planet] of Object.entries(planetData)) {
-                if (key === 'sun') continue;
-                const planetDistanceMM = planet.distance * 1e9;
-                let scaledDistance;
-                if (unit === 'mm') {
-                    scaledDistance = planetDistanceMM / scaleFactor;
-                } else if (unit === 'feet') {
-                    scaledDistance = planetDistanceMM / scaleFactor / 304.8;
-                } else {
-                    scaledDistance = planetDistanceMM / scaleFactor / 25.4;
-                }
-                results += `<p><strong>${planet.name}:</strong> ${scaledDistance.toFixed(2)} ${unit}</p>`;
-            }
-            document.getElementById('scaleResults').innerHTML = results;
+            
+            const scale = sunDiameterInches / 1392700; // Sun's actual diameter in km
+            
+            const planets = [
+                { name: 'Sun', diameter: 1392700, distance: 0, image: 'sun.png' },
+                { name: 'Mercury', diameter: 4879, distance: 57900000, image: 'mercury.png' },
+                { name: 'Venus', diameter: 12104, distance: 108200000, image: 'venus.png' },
+                { name: 'Earth', diameter: 12756, distance: 149600000, image: 'earth.png' },
+                { name: 'Mars', diameter: 6792, distance: 227900000, image: 'mars.png' },
+                { name: 'Jupiter', diameter: 142984, distance: 778500000, image: 'jupiter.png' },
+                { name: 'Saturn', diameter: 120536, distance: 1434000000, image: 'saturn.png' },
+                { name: 'Uranus', diameter: 51118, distance: 2871000000, image: 'uranus.png' },
+                { name: 'Neptune', diameter: 49528, distance: 4495000000, image: 'neptune.png' },
+                { name: 'Pluto', diameter: 2376, distance: 5900000000, image: 'pluto.png' }
+            ];
+            
+            let resultHTML = '<h2>Scaled Solar System Model</h2>';
+            resultHTML += '<div class="scaled-planets">';
+            
+            planets.forEach(planet => {
+                const scaledDiameter = planet.diameter * scale;
+                const scaledDistance = planet.distance * scale;
+                const planetKey = planet.name.toLowerCase();
+                
+                resultHTML += `
+                    <div class="scaled-planet" data-planet="${planetKey}">
+                        <img src="images/${planet.image}" alt="${planet.name}" class="planet-image">
+                        <div class="planet-details">
+                            <h3>${planet.name}</h3>
+                            <div class="planet-info">
+                                <div>Diameter: ${scaledDiameter.toFixed(2)} inches</div>
+                                <div>Distance from Sun: ${scaledDistance.toFixed(2)} inches</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultHTML += '</div>';
+            
+            document.getElementById('scaleResults').innerHTML = resultHTML;
         }
 
         function calculateDistance() {
@@ -240,7 +332,35 @@
             } else {
                 scaledDistance = Math.abs(distance1MM - distance2MM) / scaleFactor / 25.4;
             }
-            document.getElementById('distanceResult').innerHTML = `<p>Distance between ${planetData[planet1].name} and ${planetData[planet2].name}: ${scaledDistance.toFixed(2)} ${unit}</p>`;
+            
+            let resultHTML = '<div class="planet-results">';
+            if (planet1 !== 'sun') {
+                resultHTML += `<div class="planet-result">
+                    <img src="images/${planet1}.png" alt="${planetData[planet1].name}" class="planet-image">
+                    <div>${planetData[planet1].name}</div>
+                </div>`;
+            } else {
+                resultHTML += `<div class="planet-result">
+                    <img src="images/sun.png" alt="Sun" class="planet-image">
+                    <div>Sun</div>
+                </div>`;
+            }
+            resultHTML += '<div style="text-align: center; padding: 1em;">↔️</div>';
+            if (planet2 !== 'sun') {
+                resultHTML += `<div class="planet-result">
+                    <img src="images/${planet2}.png" alt="${planetData[planet2].name}" class="planet-image">
+                    <div>${planetData[planet2].name}</div>
+                </div>`;
+            } else {
+                resultHTML += `<div class="planet-result">
+                    <img src="images/sun.png" alt="Sun" class="planet-image">
+                    <div>Sun</div>
+                </div>`;
+            }
+            resultHTML += '</div>';
+            resultHTML += `<p><strong>Distance:</strong> ${scaledDistance.toFixed(2)} ${unit}</p>`;
+            
+            document.getElementById('distanceResult').innerHTML = resultHTML;
         }
 
         function updateInstructionText() {
